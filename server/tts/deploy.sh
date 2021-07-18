@@ -1,0 +1,1 @@
+gcloud functions deploy paparobot-tts --entry-point tts --runtime python39 --trigger-http --allow-unauthenticated --security-level=secure-always --region=asia-northeast1
