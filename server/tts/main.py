@@ -16,7 +16,7 @@ id_list = {
 
 @auth.get_password
 def get_pw(id):
-    id_list.get(id)
+    return id_list.get(id)
 
 @auth.login_required
 def tts(request):
