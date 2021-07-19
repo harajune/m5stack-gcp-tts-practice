@@ -11,7 +11,7 @@
 #include "credentials.h"
 
 AudioGeneratorMP3 *mp3;
-AudioFileSourceHTTPStream *file;
+AudioFileSourcePROGMEM *file;
 AudioFileSourceBuffer *buff;
 AudioOutputI2S *out;
 WiFiClientSecure *wifi_client;
@@ -68,32 +68,38 @@ void setup() {
   HTTPClient http_client;
 
   char encoded[1024];
-  url_encode("こんにちはこんにちは。いかがでしょうか？", encoded);
+  url_encode("大根は100円です。", encoded);
   char url[1024];
   sprintf(url, "https://asia-northeast1-paparobot.cloudfunctions.net/paparobot-tts?text=%s", encoded);
   Serial.println(url);
 
-  // if (http_client.begin(wifi_client, url)) {
-  //   http_client.setAuthorization(TTS_USER, TTS_PASS);
-  //   Serial.println(http_client.GET());
-  // }
+  String body;
+  int size;
+
+  if (http_client.begin(*wifi_client, url)) {
+    http_client.setAuthorization(TTS_USER, TTS_PASS);
+    Serial.println(millis()/1000);
+    int result = http_client.GET();
+    Serial.println(millis()/1000);
+
+    if (result == HTTP_CODE_OK) {
+      body = http_client.getString();
+      size = http_client.getSize();
+    } else {
+      Serial.println(result);
+    }
+  }
 
   audioLogger = &Serial;
 
-  file = new AudioFileSourceHTTPStream();
-  file->setClient(wifi_client);
-  file->setAuthorization(TTS_USER, TTS_PASS);
-  file->RegisterStatusCB(StatusCallback, (void*)"HTTP");
-  file->open(url);
-  file->RegisterMetadataCB(MDCallback, (void*)"ICY");
-  buff = new AudioFileSourceBuffer(file, 2048);
-  buff->RegisterStatusCB(StatusCallback, (void*)"buffer");
+  file = new AudioFileSourcePROGMEM(body.c_str(), size);
+
   out = new AudioOutputI2S(0, 1);
   out->SetOutputModeMono(true);
   out->SetGain(0.6);
   mp3 = new AudioGeneratorMP3();
   mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
-  mp3->begin(buff, out);
+  mp3->begin(file, out);
 
 }
 
